@@ -11,6 +11,12 @@
 import time
 import paho.mqtt.client as mqtt
 import os
+import RPi.GPIO as gpio
+
+gpio.setmode(gpio.BCM)
+gpio.setup(17, gpio.OUT)
+gpio.setup(27, gpio.OUT)
+gpio.setup(22, gpio.OUT)
 
 # Will be called upon reception of CONNACK response from the server.
 def on_connect(client, data, flags, rc):
@@ -29,10 +35,5 @@ client.username_pw_set("token:" + os.environ['MQTT_CHANNEL_TOKEN'])
 #client.username_pw_set('YOUR_SECRET_KEY')
 client.connect("mqtt.beebotte.com", 1883, 60)
 
-client.loop_start()
-
-while 1:
-# Publish a message every second
-    client.publish("GaragePi/main_interior_door_toggle", "{\"data\": true}", 1)
-    time.sleep(1)
+client.loop_forever()
 
