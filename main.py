@@ -24,6 +24,9 @@ def on_connect(client, data, flags, rc):
 
 def on_message(client, data, msg):
     print(msg.topic + " " + str(msg.payload))
+    gpio.output(17, gpio.HIGH)
+    time.sleep(0.2)
+    gpio.output(17, gpio.LOW)
 
 client = mqtt.Client()
 client.on_connect = on_connect
