@@ -21,12 +21,29 @@ gpio.setup(22, gpio.OUT)
 # Will be called upon reception of CONNACK response from the server.
 def on_connect(client, data, flags, rc):
     client.subscribe("GaragePi/main_interior_door_toggle", 1)
+    client.subscribe("GaragePi/main_exterior_door_toggle", 1)
+    client.subscribe("GaragePi/secondary_exterior_door_toggle", 1)
+
+def pulse(port):
+    gpio.output(port, gpio.HIGH)
+    time.sleep(0.2)
+    gpio.output(port, gpio.LOW)
 
 def on_message(client, data, msg):
     print(msg.topic + " " + str(msg.payload))
-    gpio.output(17, gpio.HIGH)
-    time.sleep(0.2)
-    gpio.output(17, gpio.LOW)
+    splitted = msg.topic.split("/", 1)
+    if len(splitted) < 2:
+        return
+    channel = splitted[0]
+    resource = splitted[1]
+    if channel != "GaragePi":
+        return
+    if resource == "main_interior_door_toggle":
+        pulse(17)
+    elif resource == "main_exterior_door_toggle":
+        pulse(27)
+    elif resource == "secondary_exterior_door_toggle":
+        pulse(22)
 
 client = mqtt.Client()
 client.on_connect = on_connect
