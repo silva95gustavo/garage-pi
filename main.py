@@ -13,21 +13,28 @@ import paho.mqtt.client as mqtt
 import os
 import RPi.GPIO as gpio
 
+CHANNEL="GaragePi"
+
+RESOURCES = {
+    "main_interior_door_toggle": 17,
+    "main_exterior_door_toggle": 27,
+    "secondary_exterior_door_toggle": 22
+}
+
 gpio.setmode(gpio.BCM)
-gpio.setup(17, gpio.OUT)
-gpio.setup(27, gpio.OUT)
-gpio.setup(22, gpio.OUT)
+for pin in RESOURCES.values():
+    gpio.setup(pin, gpio.OUT)
+    gpio.output(pin, gpio.HIGH) # HACK: this should be set to HIGH as fast as possible because the pin will start LOW
 
 # Will be called upon reception of CONNACK response from the server.
 def on_connect(client, data, flags, rc):
-    client.subscribe("GaragePi/main_interior_door_toggle", 1)
-    client.subscribe("GaragePi/main_exterior_door_toggle", 1)
-    client.subscribe("GaragePi/secondary_exterior_door_toggle", 1)
+    for name in RESOURCES.keys():
+        client.subscribe(CHANNEL + "/" + name)
 
 def pulse(port):
-    gpio.output(port, gpio.HIGH)
-    time.sleep(0.2)
     gpio.output(port, gpio.LOW)
+    time.sleep(0.2)
+    gpio.output(port, gpio.HIGH)
 
 def on_message(client, data, msg):
     print(msg.topic + " " + str(msg.payload))
@@ -36,14 +43,10 @@ def on_message(client, data, msg):
         return
     channel = splitted[0]
     resource = splitted[1]
-    if channel != "GaragePi":
+    if channel != CHANNEL:
         return
-    if resource == "main_interior_door_toggle":
-        pulse(17)
-    elif resource == "main_exterior_door_toggle":
-        pulse(27)
-    elif resource == "secondary_exterior_door_toggle":
-        pulse(22)
+    if resource in RESOURCES:
+        pulse(RESOURCES[resource])
 
 client = mqtt.Client()
 client.on_connect = on_connect
@@ -53,7 +56,12 @@ client.on_message = on_message
 client.username_pw_set("token:" + os.environ['MQTT_CHANNEL_TOKEN'])
 # Alternatively, set the username to your SECRET KEY
 #client.username_pw_set('YOUR_SECRET_KEY')
-client.connect("mqtt.beebotte.com", 1883, 60)
-
-client.loop_forever()
+while True:
+    try:
+        client.connect("mqtt.beebotte.com", 1883, 60)
+        client.loop_forever()
+    except KeyboardInterrupt:
+        break
+    except:
+        pass
 
