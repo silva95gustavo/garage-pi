@@ -33,7 +33,7 @@ def on_connect(client, data, flags, rc):
 
 def pulse(port):
     gpio.output(port, gpio.LOW)
-    time.sleep(0.2)
+    time.sleep(0.4)
     gpio.output(port, gpio.HIGH)
 
 def on_message(client, data, msg):
